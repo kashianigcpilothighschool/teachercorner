@@ -449,8 +449,6 @@ label.chip{margin:0!important}
         <div><label>পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><div class="pw"><input id="sPass" type="password" required minlength="6" autocomplete="new-password"><button type="button" class="eye" tabindex="-1" title="দেখান/লুকান" onclick="togglePw('sPass',this)">👁️</button></div><div class="meter" id="mP"><i></i><i></i><i></i><i></i></div><div class="hint" id="hP"></div></div>
         <div><label>পাসওয়ার্ড আবার লিখুন</label><div class="pw"><input id="sPass2" type="password" required minlength="6" autocomplete="new-password"><button type="button" class="eye" tabindex="-1" title="দেখান/লুকান" onclick="togglePw('sPass2',this)">👁️</button></div><div class="hint" id="hP2"></div></div>
       </div>
-      <label>শ্রেণি/শাখা <span style="font-weight:500;color:#8a93ab">(ঐচ্ছিক — না বাছলে অ্যাডমিন ঠিক করে দেবেন)</span></label>
-      <details class="clsbox"><summary id="sClsLbl">শ্রেণি ও শাখা নির্বাচন (ঐচ্ছিক)</summary><div class="cl" id="sCls"></div></details>
       <div class="btns col"><button class="b" id="sBtn" type="submit">অ্যাকাউন্ট খুলুন</button><button class="b alt" type="button" onclick="authStep('loginForm')">← লগইনে ফিরুন</button></div>
     </form>
 
@@ -623,30 +621,15 @@ function authStep(id) {
   if (first) setTimeout(() => $(first).focus(), 50);
 }
 
-// শ্রেণি/শাখার চেক বক্স (Users শীটের Access কী: 6_A, 9_SCI_Boys ...)
-(function buildSignupClasses() {
-  const BN = { 6: "৬ষ্ঠ", 7: "৭ম", 8: "৮ম", 9: "৯ম", 10: "১০ম" };
-  const SEC = { A: "ক", B: "খ", C: "গ" }, GRP = { SCI: "বিজ্ঞান", HUM: "মানবিক", BUS: "ব্যবসায় শিক্ষা" }, GS = { Boys: "বালক", Girls: "বালিকা" };
-  const chip = (v, t) => `<label class="chip"><input type="checkbox" class="sClsBox" value="${v}"><span>${t}</span></label>`;
-  let h = "";
-  [6, 7, 8].forEach((c) => { h += `<div class="cg"><div class="ct">${BN[c]} শ্রেণি</div><div class="cc">` + Object.keys(SEC).map((s) => chip(c + "_" + s, "শাখা " + SEC[s])).join("") + "</div></div>"; });
-  [9, 10].forEach((c) => { h += `<div class="cg"><div class="ct">${BN[c]} শ্রেণি</div><div class="cc">` + Object.keys(GRP).map((g) => Object.keys(GS).map((s) => chip(c + "_" + g + "_" + s, GRP[g] + " · " + GS[s])).join("")).join("") + "</div></div>"; });
-  $("sCls").innerHTML = h;
-  $("sCls").addEventListener("change", () => {
-    const n = document.querySelectorAll(".sClsBox:checked").length;
-    $("sClsLbl").textContent = n ? n + " টি শ্রেণি/শাখা নির্বাচিত" : "শ্রেণি ও শাখা নির্বাচন (ঐচ্ছিক)";
-  });
-})();
 
 $("signupForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const classes = Array.from(document.querySelectorAll(".sClsBox:checked")).map((c) => c.value);
   if ($("sPass").value !== $("sPass2").value) return msg("পাসওয়ার্ড দুটি মিলছে না।", false);
   if ($("sPass").value.length < 6) return msg("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।", false);
   $("sBtn").disabled = true;
   try {
-    const r = await api("signUp", $("sName").value.trim(), $("sEmail").value.trim(), $("sPass").value, $("sMobile").value.trim(), classes.join(", "));
-    $("signupForm").reset(); document.querySelectorAll(".sClsBox").forEach((c) => (c.checked = false)); $("sClsLbl").textContent = "শ্রেণি ও শাখা নির্বাচন (ঐচ্ছিক)";
+    const r = await api("signUp", $("sName").value.trim(), $("sEmail").value.trim(), $("sPass").value, $("sMobile").value.trim(), "");
+    $("signupForm").reset(); 
     authStep("loginForm");
     msg((r && r.message) || "✅ অ্যাকাউন্ট তৈরি হয়েছে। অ্যাডমিন অনুমোদন দিলে লগইন করতে পারবেন।", true);
   } catch (x) { msg("❌ " + x.message, false); }
