@@ -787,6 +787,31 @@ function clsBn(k) {
   if (p.length === 3) return c + " (" + (GRP_BN[p[1]] || p[1]) + "/" + (SEX_BN[p[2]] || p[2]) + ")";
   return c + " (" + (SEC_BN[p[1]] || p[1]) + ")";
 }
+
+// ===== Subject names -> English (server sends Bengali labels) =====
+const SUBJ_EN = [
+  ["বাংলাদেশ ও বিশ্বপরিচয়","Bangladesh & Global Studies"],["বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা","History of Bangladesh & World Civilization"],
+  ["ইতিহাস ও সামাজিক বিজ্ঞান","History & Social Science"],["বাংলাদেশ ও বিশ্ব পরিচয়","Bangladesh & Global Studies"],
+  ["ধর্ম ও নৈতিক শিক্ষা","Religion & Moral Education"],["ইসলাম ও নৈতিক শিক্ষা","Islam & Moral Education"],["ইসলাম শিক্ষা","Islam Education"],
+  ["হিন্দুধর্ম ও নৈতিক শিক্ষা","Hinduism & Moral Education"],["হিন্দুধর্ম শিক্ষা","Hindu Religion Education"],["খ্রিস্টধর্ম শিক্ষা","Christian Religion Education"],["বৌদ্ধধর্ম শিক্ষা","Buddhist Religion Education"],
+  ["তথ্য ও যোগাযোগ প্রযুক্তি","Information & Communication Technology"],["তথ্য ও যোগাযোগ","ICT"],
+  ["কর্ম ও জীবনমুখী শিক্ষা","Work & Life-oriented Education"],["কর্ম ও জীবনমুখী","Work & Life-oriented Education"],["ক্যারিয়ার শিক্ষা","Career Education"],
+  ["শারীরিক শিক্ষা ও স্বাস্থ্য","Physical Education & Health"],["শারীরিক শিক্ষা","Physical Education"],["চারু ও কারুকলা","Arts & Crafts"],
+  ["গার্হস্থ্য বিজ্ঞান","Home Science"],["কৃষি শিক্ষা","Agriculture Education"],["সাধারণ বিজ্ঞান","General Science"],
+  ["উচ্চতর গণিত","Higher Mathematics"],["সাধারণ গণিত","General Mathematics"],["গণিত","Mathematics"],
+  ["পদার্থবিজ্ঞান","Physics"],["পদার্থ বিজ্ঞান","Physics"],["রসায়ন","Chemistry"],["জীববিজ্ঞান","Biology"],["জীব বিজ্ঞান","Biology"],
+  ["ভূগোল ও পরিবেশ","Geography & Environment"],["ইতিহাস ও বিশ্বসভ্যতা","History & World Civilization"],["পৌরনীতি ও নাগরিকতা","Civics & Citizenship"],
+  ["অর্থনীতি","Economics"],["ভূগোল","Geography"],["ইতিহাস","History"],["সমাজবিজ্ঞান","Sociology"],["যুক্তিবিদ্যা","Logic"],["মনোবিজ্ঞান","Psychology"],
+  ["হিসাববিজ্ঞান","Accounting"],["ফিন্যান্স ও ব্যাংকিং","Finance & Banking"],["ব্যবসায় উদ্যোগ","Business Entrepreneurship"],["ব্যবসায় শিক্ষা","Business Studies"],["ব্যবসায় সংগঠন ও ব্যবস্থাপনা","Business Organization & Management"],
+  ["উৎপাদন ব্যবস্থাপনা ও বিপণন","Production Management & Marketing"],["বিজ্ঞান","Science"],["ইংরেজি","English"],["বাংলা","Bangla"],["আরবি","Arabic"],["সংস্কৃত","Sanskrit"],["পালি","Pali"],
+  ["ব্যবহারিক","Practical"],["প্রথম পত্র","1st Paper"],["দ্বিতীয় পত্র","2nd Paper"],["১ম পত্র","1st Paper"],["২য় পত্র","2nd Paper"],["পত্র","Paper"],
+  ["সাহিত্য","Literature"],["ব্যাকরণ ও নির্মিতি","Grammar & Composition"],["ব্যাকরণ","Grammar"],["রচনা","Composition"]
+];
+function subjEn(l) {
+  let t = String(l || "");
+  SUBJ_EN.forEach((p) => { t = t.split(p[0]).join(p[1]); });
+  return t.replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d));
+}
 const rn = (v) => parseInt(String(v).replace(/\D/g, ""), 10) || 0;
 
 // ===== গ্রেড (প্রদর্শনের জন্য) =====
@@ -829,7 +854,7 @@ $("secSel").onchange = async () => {
   await resetSubjects();
   const k = $("secSel").value, g = groupOf(k); if (!g) return;
   try { subjects = await api("pmSubjects", TOKEN, k); } catch (e) { return msg("❌ " + e.message, false); }
-  $("subjSel").innerHTML = '<option value="">-- Select --</option>' + subjects.map((s) => `<option value="${esc(s.subject_key)}">${esc(s.label || s.subject_key)}</option>`).join("");
+  $("subjSel").innerHTML = '<option value="">-- Select --</option>' + subjects.map((s) => `<option value="${esc(s.subject_key)}">${esc(subjEn(s.label || s.subject_key))}</option>`).join("");
   $("subjSel").disabled = false;
 };
 function clearSheet() { $("sheet").style.display = "none"; $("pills").innerHTML = ""; $("saveBtn").disabled = $("printBtn").disabled = true; students = []; }
@@ -865,7 +890,7 @@ $("subjSel").onchange = () => { if ($("subjSel").value) $("loadBtn").onclick(); 
 function render(k, exam, year) {
   const full = fields.reduce((a, f) => a + Number(cfg[f + "_max"]), 0);
   $("hTitle").textContent = (EXAM_BN[exam] || exam) + " " + bn(year);
-  $("hClass").textContent = clsBn(k); $("hSubj").textContent = cfg.label || cfg.subject_key;
+  $("hClass").textContent = clsBn(k); $("hSubj").textContent = subjEn(cfg.label || cfg.subject_key);
   $("hTeacher").textContent = $("tName").value; $("hMobile").textContent = $("tMobile").value ? bn($("tMobile").value) : "";
   const VC = (t) => `<th class="v"><span class="rc">${t}</span></th>`;
   const VA = (t) => `<th class="v" rowspan="2"><span class="rv">${t}</span></th>`;
@@ -873,9 +898,11 @@ function render(k, exam, year) {
   let h = `<colgroup><col style="width:5%"><col style="width:${nameW}%"><col style="width:8%"><col style="width:11%">${fields.map(() => `<col style="width:${fw}%">`).join("")}<col style="width:7%"><col style="width:8%"><col style="width:9%"><col></colgroup>` +
     `<thead><tr>${VA("Serial No.")}<th rowspan="2">Examinee Name</th>${VA("Roll No.")}${VA("Group")}<th colspan="${fields.length + 2}">Marks Obtained</th><th rowspan="2">Letter<br>Grade</th><th rowspan="2">Remarks</th></tr><tr>` +
     fields.map((f) => VC(FN[f])).join("") + VC("Total") + VC("GPA") + "</tr></thead><tbody>";
+  const _gm = String((CTX && CTX.class_key) || $("secSel").value).match(/^(9|10)_(SCI|HUM|BUS)_/);
+  const divText = _gm ? GRP_BN[_gm[2]] : DEFAULT_REMARK;   // Class 9/10: show group
   const pad = (v) => (v !== "" && /^\d$/.test(v) ? "0" + v : v);
   students.forEach((s, i) => {
-    h += `<tr data-id="${esc(s.id)}" class="${s._st === "approved" ? "ap" : ""}"><td class="sn">${i + 1}</td><td class="nm">${esc(s.name)}</td><td class="num">${esc(String(s.roll).padStart(3, "0"))}</td><td class="dv">${DEFAULT_REMARK}</td>` +
+    h += `<tr data-id="${esc(s.id)}" class="${s._st === "approved" ? "ap" : ""}"><td class="sn">${i + 1}</td><td class="nm">${esc(s.name)}</td><td class="num">${esc(String(s.roll).padStart(3, "0"))}</td><td class="dv">${esc(divText)}</td>` +
       fields.map((f) => `<td><input type="text" inputmode="decimal" data-mx="${cfg[f + "_max"]}" placeholder="/${cfg[f + "_max"]}" data-f="${f}" value="${esc(pad(orig[s.id][f]))}"></td>`).join("") +
       `<td class="tot num"></td><td class="gp num"></td><td class="gr num"></td><td><input class="rm" value=""></td></tr>`;
   });
