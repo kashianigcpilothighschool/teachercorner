@@ -488,7 +488,7 @@ label.chip{margin:0!important}
       <div><label>🔍 খুঁজুন (নাম/রোল)</label><input id="q" placeholder="নাম বা রোল"></div>
     </div>
     <div class="btns">
-      <button class="b" id="loadBtn">📥 শিক্ষার্থী লোড করুন</button>
+      <button class="b" id="loadBtn">🔄 আবার লোড করুন</button>
       <button class="b ok" id="saveBtn" disabled>💾 এখনই সংরক্ষণ</button>
       <span id="stat" style="align-self:center;font-size:13px;font-weight:600"></span>
       <button class="b alt" id="printBtn" disabled>🖨️ প্রিন্ট / PDF</button>
@@ -518,7 +518,7 @@ label.chip{margin:0!important}
     <div class="note"><b>নোট:</b> <span contenteditable="true">নম্বরপত্রটি সংশ্লিষ্ট বিষয় শিক্ষক কর্তৃক প্রস্তুতকৃত।</span></div>
     <div class="sigs on"><div><b>পরীক্ষক</b><small>বিষয় শিক্ষক</small></div><div><b>বিভাগীয় প্রধান</b><small>পরীক্ষা কমিটি</small></div><div><b>প্রধান শিক্ষক</b><small>(স্বাক্ষর ও সিল)</small></div></div>
   </div>
-  <div class="empty noprint"><span class="ic">📋</span><b>নম্বরপত্র এখনো লোড হয়নি</b>উপরে শ্রেণি, শাখা ও বিষয় বেছে “শিক্ষার্থী লোড করুন” চাপুন।</div>
+  <div class="empty noprint"><span class="ic">📋</span><b>নম্বরপত্র এখনো লোড হয়নি</b>উপরে শ্রেণি, শাখা ও বিষয় বাছুন — বিষয় বাছলেই শিক্ষার্থী নিজে থেকে লোড হবে।</div>
 </div>
 
 <script>
@@ -842,10 +842,12 @@ $("loadBtn").onclick = async () => {
   $("loadBtn").disabled = true;
   try {
     const st = await api("pmStudents", TOKEN, k, Number(year));
+    if ($("subjSel").value !== sub || $("secSel").value !== k) return;   // এর মধ্যে বিষয়/শাখা বদলে গেলে এই লোড বাদ
     students = (st || []).sort((a, b) => rn(a.roll) - rn(b.roll));
     if (!students.length) { clearSheet(); throw new Error("এই শ্রেণিতে শিক্ষার্থী নেই।"); }
     CTX = { class_key: k, exam_year: Number(year), exam_key: exam, subject_key: sub };
-    const mk = await api("pmMine", TOKEN, CTX);   // মূল সার্ভারের pending/approved; রেজাল্ট সিস্টেমের জমা নম্বর আনা হয় না
+    const mk = await api("pmMine", TOKEN, CTX);
+    if ($("subjSel").value !== sub || $("secSel").value !== k) return;   // মূল সার্ভারের pending/approved; রেজাল্ট সিস্টেমের জমা নম্বর আনা হয় না
     const by = {}; mk.forEach((m) => (by[String(m.student_id)] = m));
     orig = {}; students.forEach((s) => {
       const m = by[String(s.id)]; orig[s.id] = {};
@@ -856,6 +858,9 @@ $("loadBtn").onclick = async () => {
   } catch (e) { msg("❌ " + e.message, false); }
   finally { $("loadBtn").disabled = false; }
 };
+
+// বিষয় বাছলেই শিক্ষার্থী নিজে থেকে লোড হবে (বোতাম চাপতে হবে না)
+$("subjSel").onchange = () => { if ($("subjSel").value) $("loadBtn").onclick(); else clearSheet(); };
 
 function render(k, exam, year) {
   const full = fields.reduce((a, f) => a + Number(cfg[f + "_max"]), 0);
