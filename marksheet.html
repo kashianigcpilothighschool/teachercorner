@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>বিষয়ভিত্তিক নম্বরপত্র</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--ink:#1F2D50;--gold:#C79A47;--sage:#3F7A63;--brick:#B4432E;--line:#D8D2C0;--paper:#FAF6EC}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans Bengali',sans-serif;background:#F1EEE4;color:var(--ink);font-size:14px}
+.top{background:var(--ink);color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:4px solid var(--brick)}
+.top h1{margin:0;font:700 18px 'Noto Serif Bengali',serif}
+.top a,.top button{color:#fff;background:transparent;border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;text-decoration:none}
+.wrap{max-width:1000px;margin:18px auto;padding:0 14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+label{display:block;font-size:12.5px;font-weight:600;margin-bottom:4px}
+select,input{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff}
+select:focus,input:focus{outline:2px solid rgba(199,154,71,.4);border-color:var(--gold)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+button.b{border:0;border-radius:9px;padding:10px 18px;font:600 14px inherit;font-family:inherit;background:var(--ink);color:#fff;cursor:pointer}
+button.b.ok{background:var(--sage)} button.b.alt{background:#fff;color:var(--ink);border:1px solid var(--line)}
+button.b:disabled{opacity:.55;cursor:not-allowed}
+#msg{margin:10px 0;padding:10px 14px;border-radius:8px;display:none}
+#msg.ok{display:block;background:#E4F0E9;color:var(--sage)} #msg.err{display:block;background:#FBE7E2;color:var(--brick)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;font-size:13px}
+.pills span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 12px;font-weight:600}
+.pills .w{background:#FFF4D6;border-color:var(--gold)}
+/* ===== শিট ===== */
+.sheet{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px}
+.sh{text-align:center;margin-bottom:8px}
+.sh .sch{font:800 24px 'Noto Serif Bengali',serif;line-height:1.2}
+.sh .adr{font-weight:600;font-size:14px;margin-top:2px}
+.sh .ttl{font:700 17px 'Noto Serif Bengali',serif;margin-top:8px}
+.sh .meta{display:flex;justify-content:space-between;gap:10px;margin-top:6px;font-weight:600;font-size:14px;flex-wrap:wrap}
+[contenteditable]{outline:none;border-bottom:1px dotted transparent}
+[contenteditable]:focus{border-bottom-color:var(--gold);background:#fffbe9}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #000;padding:4px 5px;text-align:center;font-size:13.5px}
+th{background:#eee;font-weight:700}
+td.nm{text-align:left;font-weight:600} 
+td input{border:0;background:transparent;text-align:center;padding:3px;width:62px;border-radius:0}
+td input.rm{width:100%;text-align:left}
+td input.bad{background:#FBE7E2;color:var(--brick)} td input.chg{background:#FFF4D6}
+td.f{font-weight:700;color:var(--brick)}
+.sigs{display:none}
+@media print{
+  @page{size:A4 portrait;margin:12mm 10mm}
+  body{background:#fff}
+  .top,.card,.pills,#msg,.noprint{display:none!important}
+  .wrap{max-width:none;margin:0;padding:0}
+  .sheet{border:0;padding:0;border-radius:0}
+  .tw{overflow:visible}
+  th,td{font-size:11.5pt;padding:3px 4px;border:1px solid #000}
+  td input{font:inherit;color:#000;width:100%;padding:0}
+  td input.bad,td input.chg{background:transparent}
+  tr{page-break-inside:avoid;break-inside:avoid}
+  thead{display:table-header-group}
+  [contenteditable]{border:0!important;background:transparent!important}
+  .sh .sch{font-size:22pt}
+  .sigs{display:flex;justify-content:space-between;margin-top:36px}
+  .sigs div{width:30%;text-align:center;border-top:1px solid #000;padding-top:4px;font-weight:700;font-size:11pt}
+  td.f{color:#000;text-decoration:underline}
+}
+</style>
+</head>
+<body>
+<div class="top"><h1>📄 বিষয়ভিত্তিক নম্বরপত্র (নম্বর ইনপুট ও প্রিন্ট)</h1><div><span id="who" style="margin-right:10px;font-size:13px"></span><a href="index.html">🏠 হাব</a></div></div>
+
+<div class="wrap">
+  <div id="msg"></div>
+
+  <div class="card noprint" id="filters" style="display:none">
+    <div class="grid">
+      <div><label>🏫 শ্রেণি</label><select id="clsNum"><option value="">--বাছুন--</option></select></div>
+      <div><label>📁 শাখা/গ্রুপ</label><select id="secSel" disabled><option value="">--বাছুন--</option></select></div>
+      <div><label>📝 পরীক্ষা</label><select id="examSel"></select></div>
+      <div><label>📅 বছর</label><select id="yearSel"></select></div>
+      <div><label>📘 বিষয়/পত্র</label><select id="subjSel" disabled><option value="">--বাছুন--</option></select></div>
+    </div>
+    <div class="grid" style="margin-top:12px">
+      <div><label>পরীক্ষক (শিক্ষকের নাম)</label><input id="tName" placeholder="যেমন: ইমদাদুল হক"></div>
+      <div><label>মোবাইল</label><input id="tMobile" placeholder="01XXXXXXXXX"></div>
+      <div><label>🔍 খুঁজুন (নাম/রোল)</label><input id="q" placeholder="নাম বা রোল"></div>
+    </div>
+    <div class="btns">
+      <button class="b" id="loadBtn">📥 শিক্ষার্থী লোড করুন</button>
+      <button class="b ok" id="saveBtn" disabled>✅ নম্বর সংরক্ষণ</button>
+      <button class="b alt" id="printBtn" disabled>🖨️ প্রিন্ট / PDF</button>
+      <button class="b alt" id="sigBtn" type="button">✍️ সই-অংশ: বন্ধ</button>
+    </div>
+    <p style="font-size:12.5px;color:#7A8399;margin:10px 0 0">নম্বর লিখে Enter চাপলে নিচের ঘরে যাবে। GPA ও গ্রেড এখানে প্রদর্শনের জন্য মানক স্কেলে (৮০%+ = A+ 5.00, ৭০% = A 4.00, ৬০% = A- 3.50, ৫০% = B 3.00, ৪০% = C 2.00, ৩৩% = D 1.00) হিসাব করা; চূড়ান্ত ফলাফল সিস্টেম নিজে বের করে।</p>
+  </div>
+
+  <div class="pills" id="pills"></div>
+
+  <div class="sheet" id="sheet" style="display:none">
+    <div class="sh">
+      <div class="sch" contenteditable="true" id="hSch">কাশিয়ানী জি.সি.পাইলট উচ্চ বিদ্যালয়</div>
+      <div class="adr" contenteditable="true">কাশিয়ানী, গোপালগঞ্জ</div>
+      <div class="ttl" contenteditable="true" id="hTitle"></div>
+      <div class="meta">
+        <span>পরীক্ষকঃ <span id="hTeacher" contenteditable="true"></span></span>
+        <span contenteditable="true" id="hExam"></span>
+        <span>মোবাইলঃ <span id="hMobile" contenteditable="true"></span></span>
+      </div>
+    </div>
+    <div class="tw"><table id="tbl"></table></div>
+    <div class="sigs"><div>পরীক্ষক</div><div>বিভাগীয় প্রধান</div><div>প্রধান শিক্ষক</div></div>
+  </div>
+</div>
+
+<script>
+// ===== কনফিগ =====
+const API_URL  = "https://xemvwhqqpbxsdkqcscrg.supabase.co/functions/v1/attendance";
+const ANON_KEY = "sb_publishable_Ecayyqfsteeio6zjLzHAZw_F6I3h_F0";
+const RESULT_CFG = { url: "https://ryldiedndakxhmzdyiud.supabase.co", key: "sb_publishable_JWrsYWaFLksCPBndXsQaew_R9v-61X_" };
+const SYSTEM_KEY = "result";
+const SCHOOL_NAME_BN = "কাশিয়ানী জি.সি.পাইলট উচ্চ বিদ্যালয়";
+const DEFAULT_REMARK = "প্রযোজ্য নয়।";
+
+const db = supabase.createClient(RESULT_CFG.url, RESULT_CFG.key);
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const bn = (n) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[d]);
+
+function msg(t, ok) { const m = $("msg"); m.textContent = t; m.className = ok ? "ok" : "err"; clearTimeout(msg._t); msg._t = setTimeout(() => (m.className = ""), 6000); }
+
+// ===== প্রবেশ: হাবের টোকেন → SSO → Supabase session =====
+async function api(fn, ...args) {
+  const h = { "Content-Type": "application/json", apikey: ANON_KEY };
+  const r = await fetch(API_URL, { method: "POST", headers: h, body: JSON.stringify({ fn, args }) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || "অজানা সমস্যা");
+  return j.data;
+}
+async function boot() {
+  const p = new URLSearchParams(location.search);
+  const token = p.get("token") || sessionStorage.getItem("app_token") || "";
+  try {
+    if (token) {
+      sessionStorage.setItem("app_token", token);
+      const me = await api("whoAmI", token); $("who").textContent = me.name || me.email;
+      if (me.isOffice) throw new Error("অফিস অ্যাকাউন্টে এই পেজের অনুমতি নেই।");
+      const r = await api("getSystemSession", token, SYSTEM_KEY);
+      let { error } = await db.auth.verifyOtp({ token_hash: r.tokenHash, type: "magiclink" });
+      if (error) ({ error } = await db.auth.verifyOtp({ token_hash: r.tokenHash, type: "email" }));
+      if (error) throw new Error("রেজাল্ট সিস্টেমে প্রবেশ ব্যর্থ: " + error.message);
+      try { history.replaceState(null, "", location.pathname); } catch (e) {}
+    }
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) throw new Error("লগইন করা নেই। হাব (index.html) থেকে লগইন করে আবার আসুন।");
+    const { data: t } = await db.from("teachers").select("status").maybeSingle();
+    if (!t || t.status !== "active") throw new Error("আপনার অ্যাকাউন্ট রেজাল্ট সিস্টেমে অনুমোদিত নয়।");
+    await init();
+  } catch (e) { msg("❌ " + e.message, false); }
+}
+
+// ===== ক্লাস/পরীক্ষা সহায়ক =====
+const BN_CLS = { 6: "৬ষ্ঠ", 7: "৭ম", 8: "৮ম", 9: "৯ম", 10: "১০ম" };
+const SEC_BN = { A: "ক", B: "খ", C: "গ", D: "ঘ" };
+const GRP_BN = { SCI: "বিজ্ঞান", HUM: "মানবিক", BUS: "ব্যবসায় শিক্ষা" };
+const SEX_BN = { Boys: "বালক", Girls: "বালিকা" };
+const EXAM_BN = { half_yearly: "অর্ধবার্ষিক পরীক্ষা", annual: "বার্ষিক পরীক্ষা", pre_test: "প্রাক-নির্বাচনী পরীক্ষা", test: "নির্বাচনী পরীক্ষা" };
+function groupOf(k) {
+  if (/^(6|7|8)_/.test(k)) return "6_8";
+  const m = k.match(/^(9|10)_(SCI|HUM|BUS)_/); return m ? "9_10_" + m[2].toLowerCase() : null;
+}
+function examsOf(k) {
+  return /^10_/.test(k) ? [["pre_test", "প্রি-টেস্ট"], ["test", "টেস্ট (নির্বাচনী)"]] : [["half_yearly", "অর্ধবার্ষিক"], ["annual", "বার্ষিক"]];
+}
+function secLabel(k) {
+  const p = k.split("_");
+  if (p.length === 3) return (GRP_BN[p[1]] || p[1]) + " / " + (SEX_BN[p[2]] || p[2]);
+  return "শাখা " + (SEC_BN[p[1]] || p[1]);
+}
+function clsBn(k) {
+  const p = k.split("_"), c = BN_CLS[p[0]] || p[0];
+  if (p.length === 3) return c + " (" + (GRP_BN[p[1]] || p[1]) + "/" + (SEX_BN[p[2]] || p[2]) + ")";
+  return c + " (" + (SEC_BN[p[1]] || p[1]) + ")";
+}
+const rn = (v) => parseInt(String(v).replace(/\D/g, ""), 10) || 0;
+
+// ===== গ্রেড (প্রদর্শনের জন্য) =====
+function grade(total, full) {
+  if (total === null || !full) return { gp: "", gr: "" };
+  const pc = total * 100 / full;
+  const t = pc >= 80 ? [5, "A+"] : pc >= 70 ? [4, "A"] : pc >= 60 ? [3.5, "A-"] : pc >= 50 ? [3, "B"] : pc >= 40 ? [2, "C"] : pc >= 33 ? [1, "D"] : [0, "F"];
+  return { gp: t[0].toFixed(2), gr: t[1] };
+}
+
+// ===== ডেটা =====
+let CK = [], subjects = [], cfg = null, students = [], orig = {}, fields = [];
+const FN = { cq: "CQ", mcq: "MCQ", practical: "ব্যবহারিক" };
+
+async function init() {
+  $("filters").style.display = "block";
+  const y = new Date().getFullYear();
+  $("yearSel").innerHTML = ""; for (let i = y; i >= 2025; i--) $("yearSel").innerHTML += `<option>${i}</option>`;
+  const { data, error } = await db.from("class_list").select("class_key").order("class_key");
+  if (error) return msg(error.message, false);
+  CK = (data || []).map((c) => c.class_key);
+  const nums = [...new Set(CK.map((k) => k.split("_")[0]))].sort((a, b) => a - b);
+  $("clsNum").innerHTML = '<option value="">--বাছুন--</option>' + nums.map((n) => `<option value="${n}">${BN_CLS[n] || n} শ্রেণি</option>`).join("");
+  $("tName").value = localStorage.getItem("ms_teacher") || ""; $("tMobile").value = localStorage.getItem("ms_mobile") || "";
+}
+$("clsNum").onchange = () => {
+  const n = $("clsNum").value, ks = CK.filter((k) => k.split("_")[0] === n);
+  $("secSel").innerHTML = '<option value="">--বাছুন--</option>' + ks.map((k) => `<option value="${esc(k)}">${esc(secLabel(k))}</option>`).join("");
+  $("secSel").disabled = !n; resetSubjects();
+};
+async function resetSubjects() {
+  $("subjSel").innerHTML = '<option value="">--বাছুন--</option>'; $("subjSel").disabled = true; subjects = []; clearSheet();
+  const k = $("secSel").value;
+  if (!k) return;
+  $("examSel").innerHTML = examsOf(k).map((e) => `<option value="${e[0]}">${e[1]}</option>`).join("");
+}
+$("secSel").onchange = async () => {
+  await resetSubjects();
+  const k = $("secSel").value, g = groupOf(k); if (!g) return;
+  const { data, error } = await db.from("subject_config").select("*").eq("group_code", g).order("sort");
+  if (error) return msg(error.message, false);
+  subjects = data || [];
+  $("subjSel").innerHTML = '<option value="">--বাছুন--</option>' + subjects.map((s) => `<option value="${esc(s.subject_key)}">${esc(s.label || s.subject_key)}</option>`).join("");
+  $("subjSel").disabled = false;
+};
+function clearSheet() { $("sheet").style.display = "none"; $("pills").innerHTML = ""; $("saveBtn").disabled = $("printBtn").disabled = true; students = []; }
+
+$("loadBtn").onclick = async () => {
+  const k = $("secSel").value, sub = $("subjSel").value, year = $("yearSel").value, exam = $("examSel").value;
+  if (!k || !sub) return msg("শ্রেণি, শাখা ও বিষয় বাছুন।", false);
+  cfg = subjects.find((s) => s.subject_key === sub);
+  fields = ["cq", "mcq", "practical"].filter((f) => cfg[f + "_max"] != null);
+  $("loadBtn").disabled = true;
+  try {
+    const { data: st, error } = await db.from("students").select("id,roll,name").eq("class_key", k).eq("exam_year", year).range(0, 9999);
+    if (error) throw new Error(error.message);
+    students = (st || []).sort((a, b) => rn(a.roll) - rn(b.roll));
+    if (!students.length) { clearSheet(); throw new Error("এই শ্রেণিতে শিক্ষার্থী নেই।"); }
+    const mk = [];
+    for (let i = 0; i < students.length; i += 40) {
+      const { data, error: e2 } = await db.from("marks").select("*").eq("exam_key", exam).eq("subject_key", sub)
+        .in("student_id", students.slice(i, i + 40).map((s) => s.id));
+      if (e2) throw new Error(e2.message); mk.push(...(data || []));
+    }
+    const by = {}; mk.forEach((m) => (by[m.student_id] = m));
+    orig = {}; students.forEach((s) => { orig[s.id] = {}; fields.forEach((f) => { const v = by[s.id] && by[s.id][f] != null ? by[s.id][f] : ""; orig[s.id][f] = String(v); }); s._saved = !!by[s.id]; });
+    render(k, exam, year);
+  } catch (e) { msg("❌ " + e.message, false); }
+  finally { $("loadBtn").disabled = false; }
+};
+
+function render(k, exam, year) {
+  const full = fields.reduce((a, f) => a + Number(cfg[f + "_max"]), 0);
+  $("hTitle").textContent = clsBn(k) + " " + (cfg.label || cfg.subject_key);
+  $("hExam").textContent = (EXAM_BN[exam] || exam) + " " + bn(year);
+  $("hTeacher").textContent = $("tName").value; $("hMobile").textContent = $("tMobile").value ? bn($("tMobile").value) : "";
+  let h = `<thead><tr><th rowspan="2">ক্রমিক নং</th><th rowspan="2">রোল</th><th rowspan="2" style="min-width:160px">পরীক্ষার্থীর নাম</th><th colspan="${fields.length}">প্রাপ্ত নম্বর</th><th rowspan="2">মোট<br>(${bn(full)})</th><th rowspan="2">GPA</th><th rowspan="2">Letter<br>Grade</th><th rowspan="2">মন্তব্য</th></tr><tr>` +
+    fields.map((f) => `<th>${FN[f]}<br>(${bn(cfg[f + "_max"])})</th>`).join("") + "</tr></thead><tbody>";
+  students.forEach((s, i) => {
+    h += `<tr data-id="${esc(s.id)}"><td>${bn(String(i + 1).padStart(3, "0"))}</td><td>${bn(String(s.roll).padStart(3, "0"))}</td><td class="nm">${esc(s.name)}</td>` +
+      fields.map((f) => `<td><input type="number" min="0" max="${cfg[f + "_max"]}" step="0.5" data-f="${f}" value="${esc(orig[s.id][f])}"></td>`).join("") +
+      `<td class="tot"></td><td class="gp"></td><td class="gr"></td><td><input class="rm" value="${DEFAULT_REMARK}"></td></tr>`;
+  });
+  $("tbl").innerHTML = h + "</tbody>";
+  $("sheet").style.display = "block"; $("saveBtn").disabled = $("printBtn").disabled = false;
+  [...$("tbl").tBodies[0].rows].forEach(upd); summary();
+}
+
+function upd(tr) {
+  const id = tr.dataset.id; let tot = 0, any = false, bad = false, chg = false;
+  tr.querySelectorAll("input[data-f]").forEach((el) => {
+    const v = el.value.trim(), n = Number(v), mx = Number(el.max), o = orig[id][el.dataset.f];
+    const inv = v !== "" && (isNaN(n) || n < 0 || n > mx);
+    el.classList.toggle("bad", inv); if (inv) bad = true;
+    if (v !== "") { any = true; if (!inv) tot += n; }
+    const c = v === "" ? o !== "" : (o === "" || Number(o) !== n);
+    el.classList.toggle("chg", c); if (c) chg = true;
+  });
+  const full = fields.reduce((a, f) => a + Number(cfg[f + "_max"]), 0);
+  const total = any && !bad ? Math.round(tot * 100) / 100 : null, g = grade(total, full);
+  tr.querySelector(".tot").textContent = total === null ? "" : bn(total);
+  tr.querySelector(".gp").textContent = g.gp ? bn(g.gp) : "";
+  const gr = tr.querySelector(".gr"); gr.textContent = g.gr; gr.classList.toggle("f", g.gr === "F");
+  tr.classList.toggle("dirty", chg);
+}
+function summary() {
+  const rows = [...$("tbl").tBodies[0].rows], d = rows.filter((r) => r.classList.contains("dirty")).length;
+  const inv = rows.filter((r) => r.querySelector("input.bad")).length;
+  const filled = rows.filter((r) => [...r.querySelectorAll("input[data-f]")].some((i) => i.value.trim() !== "")).length;
+  $("pills").innerHTML = `<span>👥 ${students.length} জন</span><span>✔ নম্বর দেওয়া: ${filled}</span>` + (d ? `<span class="w">✎ অসংরক্ষিত: ${d}</span>` : "") + (inv ? `<span class="w" style="color:var(--brick)">⚠ ভুল: ${inv}</span>` : "");
+}
+$("tbl").addEventListener("input", (e) => { const tr = e.target.closest("tr[data-id]"); if (tr) { upd(tr); summary(); } });
+$("tbl").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || !e.target.matches("input[data-f]")) return;
+  e.preventDefault();
+  const f = e.target.dataset.f; let tr = e.target.closest("tr");
+  while ((tr = tr.nextElementSibling)) { const n = tr.querySelector(`input[data-f="${f}"]`); if (n) { n.focus(); n.select(); return; } }
+});
+$("q").oninput = () => {
+  const v = $("q").value.trim().toLowerCase();
+  [...($("tbl").tBodies[0] || { rows: [] }).rows].forEach((r) => (r.style.display = !v || (r.cells[1].textContent + " " + r.cells[2].textContent).toLowerCase().includes(v) ? "" : "none"));
+};
+
+// ===== সংরক্ষণ =====
+$("saveBtn").onclick = async () => {
+  const exam = $("examSel").value, rows = [];
+  for (const tr of $("tbl").tBodies[0].rows) {
+    const id = tr.dataset.id, s = students.find((x) => String(x.id) === id);
+    if (tr.querySelector("input.bad")) return msg(`রোল ${s.roll}: নম্বর সীমার বাইরে।`, false);
+    if (!tr.classList.contains("dirty")) continue;
+    const row = { student_id: s.id, exam_key: exam, subject_key: cfg.subject_key }; let any = false;
+    tr.querySelectorAll("input[data-f]").forEach((el) => { const v = el.value.trim(); row[el.dataset.f] = v === "" ? null : Number(v); if (v !== "") any = true; });
+    if (any || s._saved) rows.push(row);
+  }
+  if (!rows.length) return msg("সংরক্ষণের মতো কোনো পরিবর্তন নেই।", false);
+  $("saveBtn").disabled = true;
+  try {
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await db.from("marks").upsert(rows.slice(i, i + 200), { onConflict: "student_id,exam_key,subject_key" });
+      if (error) throw new Error(error.message);
+    }
+    msg(`✅ ${rows.length} জনের নম্বর সংরক্ষিত হয়েছে।`, true);
+    $("loadBtn").click();
+  } catch (e) { msg("❌ " + e.message, false); }
+  finally { $("saveBtn").disabled = false; }
+};
+
+// ===== প্রিন্ট =====
+$("printBtn").onclick = () => {
+  if ($("tbl").querySelector("input.bad")) return msg("ভুল নম্বর ঠিক করে প্রিন্ট করুন।", false);
+  $("q").value = ""; $("q").oninput();
+  window.print();
+};
+$("sigBtn").onclick = () => {
+  const on = $("sigBtn").dataset.on !== "1"; $("sigBtn").dataset.on = on ? "1" : "";
+  $("sigBtn").textContent = "✍️ সই-অংশ: " + (on ? "চালু" : "বন্ধ");
+  document.querySelector(".sigs").style.display = on ? "flex" : "";
+};
+["tName", "tMobile"].forEach((id) => $(id).addEventListener("input", () => {
+  localStorage.setItem("ms_teacher", $("tName").value); localStorage.setItem("ms_mobile", $("tMobile").value);
+  $("hTeacher").textContent = $("tName").value; $("hMobile").textContent = $("tMobile").value ? bn($("tMobile").value) : "";
+}));
+window.addEventListener("beforeunload", (e) => { if (document.querySelector("#tbl tr.dirty")) { e.preventDefault(); e.returnValue = ""; } });
+
+boot();
+</script>
+</body>
+</html>
